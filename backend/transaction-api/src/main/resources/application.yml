@@ -1,6 +1,10 @@
 spring:
   application:
     name: iprf-transaction-api
+  # Rule configuration lives with the rule code in the risk-engine module, so
+  # the file Phase 5's TypeScript generator reads has a stable path.
+  config:
+    import: "classpath:application-rules.yml"
 
 server:
   port: ${SERVER_PORT:8080}
@@ -10,6 +14,31 @@ server:
 iprf:
   framework-version: 0.1.0-SNAPSHOT
 
+  # Synthetic scenario run: `./gradlew runScenario`. Never active in a serving
+  # deployment — the runner is conditional on `enabled` being true.
+  scenario:
+    enabled: false
+    profiles: 200
+    transactions: 1000
+    # Fixed so the reported rates are reproducible by anyone running the same
+    # command. A run whose numbers cannot be reproduced is a claim, not a
+    # measurement.
+    seed: 20260814
+    framework-version: ${iprf.framework-version}
+
 logging:
+  # Structured JSON on stdout. Decisions are logged with correlation ID, rule
+  # versions and latency; those fields have to survive log aggregation as fields
+  # rather than as text somebody has to parse with a regex during an incident.
+  structured:
+    format:
+      console: ecs
   level:
     io.iprf: INFO
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    path: /api/v1/docs
+    operations-sorter: method
