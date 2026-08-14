@@ -1,0 +1,20 @@
+# Normalize line endings across platforms.
+# The repository is authored on Windows but built on Linux CI runners.
+* text=auto eol=lf
+
+# Windows-only scripts must keep CRLF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# The Gradle wrapper script is executed by /bin/sh on CI. CRLF here breaks the
+# shebang with "bad interpreter" — pin it to LF explicitly.
+gradlew text eol=lf
+
+# Binaries must never be touched.
+*.jar   binary
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary

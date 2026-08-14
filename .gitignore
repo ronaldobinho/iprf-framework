@@ -1,0 +1,44 @@
+# --- Secrets and local environment ---------------------------------------
+# Only .env.example is committed. Never commit a real .env.
+.env
+.env.*
+!.env.example
+
+# --- Gradle / Java --------------------------------------------------------
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# --- Node / Next.js -------------------------------------------------------
+node_modules/
+.next/
+out/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- IDE ------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# --- OS -------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Generated / local artifacts ------------------------------------------
+/logs/
+benchmarks/results/local/
