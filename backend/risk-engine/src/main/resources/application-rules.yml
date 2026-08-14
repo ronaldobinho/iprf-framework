@@ -1,0 +1,76 @@
+# IPRF rule configuration.
+#
+# Every number that determines an outcome lives here. Changing a threshold is a
+# risk decision with a response time measured in hours; coupling it to a release
+# cycle would mean an institution cannot respond to an active attack faster than
+# it can ship software.
+#
+# This file is a published interface. Phase 5 generates the TypeScript
+# simulator's constants from it at build time so the browser simulator and the
+# Java engine cannot silently diverge, and a CI parity test asserts both produce
+# identical decisions and reason codes.
+#
+# All values are validated at startup. A malformed configuration stops the
+# application rather than producing quietly wrong decisions.
+
+iprf:
+  rules:
+
+    # Relative weight of each in-path layer in the composite score.
+    #
+    # Layer 2 carries the most weight because deviation from the payer's own
+    # baseline is the primary available signal against APP fraud, which is the
+    # dominant instant-payment fraud category. Layers absent from a deployment
+    # are excluded from the denominator rather than counted as zero.
+    layer-weights:
+      IDENTITY_POSTURE: 0.25
+      BEHAVIORAL_SCORING: 0.50
+      COUNTERPARTY_NETWORK: 0.25
+
+    # Score boundaries. Below review-threshold is ALLOW; at or above
+    # decline-threshold is DECLINE; between them is REVIEW.
+    #
+    # The gap between the two is deliberately wide. REVIEW is what converts the
+    # uncertain middle band from a binary error into an operational cost, and
+    # both rails accommodate it explicitly — Pix through its fraud-suspicion
+    # authorization window, FedNow through "accept without posting".
+    decision:
+      review-threshold: 0.35
+      decline-threshold: 0.60
+
+    # --- Layer 1: Identity & Account Posture ------------------------------
+    identity:
+      new-account-days: 30
+      new-account-weight: 0.30
+      unverified-weight: 0.35
+      unknown-device-weight: 0.35
+      # An active restriction is close to decisive on its own.
+      restricted-weight: 0.80
+      # Profiles older than this degrade the layer rather than being trusted.
+      profile-max-age-hours: 24
+
+    # --- Layer 2: Real-Time Behavioral Scoring ----------------------------
+    behavioral:
+      # Deviation from the payer's own mean, in standard deviations. Preferred
+      # over an absolute limit: an absolute threshold is trivially learned and
+      # sat underneath, while a baseline-relative one is not knowable by the
+      # attacker.
+      amount-deviation-sigmas: 3.0
+      amount-deviation-weight: 0.45
+
+      # Individually weak on purpose. A first payment to a new counterparty is
+      # what happens every time someone pays a new landlord; on its own it must
+      # not flag. It becomes meaningful in combination.
+      new-counterparty-weight: 0.25
+      unusual-hour-weight: 0.20
+      channel-switch-weight: 0.20
+
+      velocity-max-per-hour: 5
+      velocity-weight: 0.35
+
+      # Below this much history, deviation rules are noise. The engine falls
+      # back to a conservative absolute threshold and records that it did so —
+      # new accounts are exactly where mule activity concentrates, so an
+      # unusable baseline must never resolve silently to "low risk".
+      minimum-baseline-transactions: 10
+      fallback-absolute-amount: 2500.00

@@ -2,6 +2,7 @@ package io.iprf.transaction;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Entry point of the IPRF modular monolith.
@@ -11,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * to know about each of them individually.
  */
 @SpringBootApplication(scanBasePackages = "io.iprf")
+@ConfigurationPropertiesScan("io.iprf")
 public class TransactionApiApplication {
 
     public static void main(String[] args) {

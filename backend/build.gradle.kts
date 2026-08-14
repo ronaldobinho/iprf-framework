@@ -30,7 +30,14 @@ subprojects {
         // dependency-management plugin. Starters are declared without versions;
         // the BOM resolves them consistently across all nine modules.
         add("implementation", platform(springBootBom))
+        // annotationProcessor does not extend implementation, so it needs the
+        // platform declared separately or processors resolve without a version.
+        add("annotationProcessor", platform(springBootBom))
         add("testImplementation", "org.springframework.boot:spring-boot-starter-test")
+        // Gradle 9 no longer puts the JUnit Platform launcher on the test runtime
+        // classpath implicitly. The Spring Boot plugin adds it, but it is applied
+        // only to transaction-api, so every other module needs it declared.
+        add("testRuntimeOnly", "org.junit.platform:junit-platform-launcher")
     }
 
     tasks.withType<JavaCompile>().configureEach {
