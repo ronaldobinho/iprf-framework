@@ -7,6 +7,81 @@ stale-state tests green; FP/latency metrics computed from real pipeline runs.
 
 ---
 
+## Carried over from Phase 1
+
+Written at the close of Phase 1, per the process in `README.md`. These are facts
+about the code as it now stands — read them before starting 2.1.
+
+**Where things live.** The brief's module list has no `core-domain`, so the
+shared domain types live in `risk-engine` under `io.iprf.domain`, and
+`transaction-api` depends on `risk-engine`. `AuditRecord` is already defined
+there as a plain record with no persistence annotations, precisely so the
+`audit` module can map it to storage without dragging JPA onto the payment path.
+
+**State interfaces already exist.** `io.iprf.state.AccountProfileStore` and
+`VelocityCounterStore` are read-only interfaces with in-memory implementations.
+Session 2.1 adds `RiskStateStore` alongside them and swaps the backing to Redis;
+the interfaces are deliberately write-free so an in-path caller cannot populate
+what it reads.
+
+**`LayerResult.stateVersion` is already on the wire** — declared, serialized in
+the API response, and currently always null because no layer reads pre-computed
+counterparty state yet. Layer 3 populates it; `AuditRecord.stateVersionsRead`
+already collects it.
+
+**Reason codes are a published vocabulary.** `NETWORK_STATE_ABSENT`,
+`NETWORK_STATE_STALE` and `NETWORK_STATE_UNAVAILABLE` are already defined in the
+`ReasonCode` enum. Add codes, never rename them — historical audit records and
+the Phase 5 TypeScript parity test both depend on stability.
+
+**The ArchUnit guard is in place** at
+`risk-engine/src/test/java/io/iprf/architecture/InPathArchitectureTest.java`,
+with four rules covering `io.iprf.engine..`, `io.iprf.state..` and
+`io.iprf.domain..` against JPA, Spring Data, JDBC, Hibernate, Hikari and HTTP
+clients. Session 2.1 extends the package list to cover `network-risk`.
+
+**`Clock` is a Spring bean** (`EngineConfig.iprfClock`). Every timestamped
+component takes it by constructor. Do not call `Instant.now()` directly — stale-state
+and TTL tests depend on pinning time.
+
+**Metrics have a starting point.** `io.iprf.synthetic.EvaluationStatistics`
+already computes the confusion matrix, detection and false-positive rates, the
+decision distribution and latency percentiles from generator-assigned labels.
+Session 2.4's Micrometer work should expose the same definitions rather than
+inventing parallel ones — in particular, a `REVIEW` on a legitimate payment
+counts as a false positive.
+
+**Build note.** Gradle 9 no longer puts the JUnit Platform launcher on the test
+runtime classpath implicitly; the root build declares it for every module. Any
+new module inherits that automatically.
+
+### A measurable target for Layer 3
+
+The Phase 1 scenario run (`./gradlew runScenario`, seed 20260814, 200 profiles,
+1,000 transactions) produced:
+
+| | |
+|---|---|
+| ALLOW / REVIEW / DECLINE | 891 / 47 / 62 |
+| Detection rate | 78.75% |
+| False positive rate | 5.00% (hard: 0.65%) |
+| Precision | 57.80% |
+| Latency p50 / p95 / p99 | 0.045 / 0.121 / 0.223 ms |
+
+Nearly all 17 false negatives are the `FRAUD_SUBTLE` scenario — fraud shaped to
+look ordinary, where only the destination is wrong. That is precisely the case
+Layer 3 exists to catch, and the generator already reuses mule destinations
+across those transactions.
+
+**Phase 2 should therefore raise the detection rate without a proportional rise
+in the false-positive rate, and the run above is the baseline to compare
+against.** If Layer 3 lands and detection does not move, either the feedback
+loop is not reaching Layer 3 or the risk tiers are not being populated — and
+that is a finding worth having, not a number to quietly retune the thresholds
+around.
+
+---
+
 ## Session 2.1 — Layer 3: Counterparty & Network Signals
 
 1. `risk-state` module: `RiskStateStore` backed by Redis, holding pre-computed
