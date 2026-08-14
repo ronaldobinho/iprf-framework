@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: iprf-transaction-api
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Framework version is stamped onto every decision and audit record, so it is
+# configuration rather than a constant in code.
+iprf:
+  framework-version: 0.1.0-SNAPSHOT
+
+logging:
+  level:
+    io.iprf: INFO
