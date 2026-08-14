@@ -1,0 +1,21 @@
+[versions]
+java = "21"
+springBoot = "3.5.3"
+springdoc = "2.8.6"
+archunit = "1.4.1"
+
+[libraries]
+# Applied to every module in the root build script as a platform, so starters can
+# be declared without versions.
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot" }
+
+# Session 1.3 — OpenAPI spec generated from the controllers.
+springdoc-openapi-webmvc = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# Session 1.4 — architecture test that fails the build if the in-path engine
+# imports a repository/JPA class. This is the structural guard for the project's
+# one non-negotiable principle.
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
