@@ -39,6 +39,20 @@ public class SyntheticDatasetGenerator {
     private static final double SHARE_FRAUD_SUBTLE = 0.03;
     // remainder is FRAUD_TAKEOVER
 
+    /**
+     * Mule collection accounts, modelled as a concentrated core plus a long tail.
+     *
+     * <p>An earlier version spread fraud uniformly across forty destinations,
+     * which made fan-in undetectable by construction and would have made this
+     * repository's central demonstration impossible. That was wrong about the
+     * threat, not just inconvenient: mule networks concentrate. A campaign runs a
+     * small number of heavily used collection accounts, with occasional
+     * one-offs — which is precisely why fan-in is a usable signal at all.
+     */
+    private static final int PRIMARY_COLLECTION_ACCOUNTS = 3;
+    private static final int LONG_TAIL_ACCOUNTS = 25;
+    private static final double SHARE_TO_PRIMARY_COLLECTORS = 0.75;
+
     private final long seed;
 
     public SyntheticDatasetGenerator(long seed) {
@@ -181,7 +195,7 @@ public class SyntheticDatasetGenerator {
                     atHour(now, midActiveHour(profile), random));
 
             case FRAUD_OVERT -> tx(index, profile,
-                    "acct-mule-%05d".formatted(index % 40),   // reused destinations
+                    muleAccount(random),
                     aroundMean(mean, stdDev, 6.0, random),
                     Channel.WEB,
                     "dev-unknown-%05d".formatted(index),
@@ -191,14 +205,14 @@ public class SyntheticDatasetGenerator {
             // device. Only the destination is wrong, and Layer 3 is what would
             // catch it — which is exactly the argument for Layer 3 existing.
             case FRAUD_SUBTLE -> tx(index, profile,
-                    "acct-mule-%05d".formatted(index % 40),
+                    muleAccount(random),
                     aroundMean(mean, stdDev, 0.4, random),
                     typicalChannel,
                     knownDevice,
                     atHour(now, midActiveHour(profile), random));
 
             case FRAUD_TAKEOVER -> tx(index, profile,
-                    "acct-mule-%05d".formatted(index % 40),
+                    muleAccount(random),
                     aroundMean(mean, stdDev, 3.5, random),
                     Channel.API,                                // channel the payer never uses
                     "dev-unknown-%05d".formatted(index),
@@ -220,6 +234,21 @@ public class SyntheticDatasetGenerator {
                 deviceId,
                 Rail.FEDNOW,
                 initiatedAt);
+    }
+
+    /**
+     * Picks a mule destination, weighted toward a small set of primary
+     * collection accounts.
+     *
+     * <p>This weighting is what makes fan-in detectable, and it is not a
+     * convenience: uniform spread across many destinations would model a threat
+     * that does not behave the way mule networks actually behave.
+     */
+    private static String muleAccount(Random random) {
+        if (random.nextDouble() < SHARE_TO_PRIMARY_COLLECTORS) {
+            return "acct-mule-primary-%02d".formatted(random.nextInt(PRIMARY_COLLECTION_ACCOUNTS));
+        }
+        return "acct-mule-tail-%03d".formatted(random.nextInt(LONG_TAIL_ACCOUNTS));
     }
 
     /** An amount {@code sigmas} standard deviations from the payer's mean, with jitter. */

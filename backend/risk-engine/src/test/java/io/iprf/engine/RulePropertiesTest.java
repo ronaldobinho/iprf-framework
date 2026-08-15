@@ -52,7 +52,8 @@ class RulePropertiesTest {
                 Map.of(),
                 new RuleProperties.DecisionThresholds(0.35, 0.60),
                 validIdentity(),
-                validBehavioral()))
+                validBehavioral(),
+                TestRules.networkRules()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("layer-weights is empty");
     }
@@ -64,7 +65,8 @@ class RulePropertiesTest {
                 Map.of(ControlLayer.IDENTITY_POSTURE, -0.5),
                 new RuleProperties.DecisionThresholds(0.35, 0.60),
                 validIdentity(),
-                validBehavioral()))
+                validBehavioral(),
+                TestRules.networkRules()))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -83,6 +85,28 @@ class RulePropertiesTest {
     void nonPositiveVelocityRejected() {
         assertThatThrownBy(() -> new RuleProperties.BehavioralRules(
                 3.0, 0.45, 0.25, 0.20, 0, 0.35, 0.20, 10, new BigDecimal("2500.00")))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("a non-zero UNKNOWN tier weight is rejected — never-seen counterparties "
+            + "must not be charged for the system's own ignorance")
+    void nonZeroUnknownTierRejected() {
+        assertThatThrownBy(() -> new RuleProperties.NetworkRules(
+                1440,
+                java.util.Map.of(io.iprf.domain.CounterpartyRiskTier.UNKNOWN, 0.25),
+                0.60, 0.70))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("absence of information is not");
+    }
+
+    @Test
+    @DisplayName("a non-positive state TTL is rejected")
+    void nonPositiveTtlRejected() {
+        assertThatThrownBy(() -> new RuleProperties.NetworkRules(
+                0,
+                java.util.Map.of(io.iprf.domain.CounterpartyRiskTier.LOW, 0.0),
+                0.60, 0.70))
                 .isInstanceOf(IllegalStateException.class);
     }
 

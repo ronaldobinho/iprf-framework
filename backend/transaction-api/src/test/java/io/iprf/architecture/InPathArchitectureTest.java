@@ -28,10 +28,30 @@ import com.tngtech.archunit.lang.ArchRule;
         importOptions = ImportOption.DoNotIncludeTests.class)
 class InPathArchitectureTest {
 
+    /** Every package that participates in transaction authorization. */
+    private static final String[] IN_PATH_PACKAGES = {
+            "io.iprf.engine..",
+            "io.iprf.network..",
+    };
+
+    /**
+     * Persistence access that implies a live query.
+     *
+     * <p>Note what is <em>not</em> here: {@code org.springframework.data.redis}.
+     * The rule forbids querying a transactional datastore on the payment path,
+     * and Redis is where pre-computed state deliberately lives — reading it
+     * in-path is the design, not a violation. Banning the whole
+     * {@code org.springframework.data} namespace would have been easier to write
+     * and would have banned the thing the architecture requires.
+     */
     private static final String[] PERSISTENCE_PACKAGES = {
             "jakarta.persistence..",
             "javax.persistence..",
-            "org.springframework.data..",
+            "org.springframework.data.jpa..",
+            "org.springframework.data.repository..",
+            "org.springframework.data.relational..",
+            "org.springframework.data.jdbc..",
+            "org.springframework.jdbc..",
             "org.hibernate..",
             "java.sql..",
             "javax.sql..",
@@ -45,8 +65,8 @@ class InPathArchitectureTest {
      * which are properties of the rule that issued it.
      */
     @ArchTest
-    static final ArchRule inPathEngineMustNotReachPersistence = noClasses()
-            .that().resideInAnyPackage("io.iprf.engine..")
+    static final ArchRule inPathMustNotReachPersistence = noClasses()
+            .that().resideInAnyPackage(IN_PATH_PACKAGES)
             .should().dependOnClassesThat().resideInAnyPackage(PERSISTENCE_PACKAGES)
             .because("Layers 1-3 run in-path and must read pre-computed state only. "
                     + "A live query here converts a fraud control into an availability incident "
@@ -77,13 +97,13 @@ class InPathArchitectureTest {
                     + "persistence would drag JPA onto the payment path through the back door.");
 
     /**
-     * The engine must not make outbound calls either. An external call has
-     * unbounded latency, independent availability and non-deterministic results
-     * — each of which alone breaks the in-path contract.
+     * The in-path layers must not make outbound calls either. An external call
+     * has unbounded latency, independent availability and non-deterministic
+     * results — each of which alone breaks the in-path contract.
      */
     @ArchTest
-    static final ArchRule inPathEngineMustNotCallOut = noClasses()
-            .that().resideInAnyPackage("io.iprf.engine..")
+    static final ArchRule inPathMustNotCallOut = noClasses()
+            .that().resideInAnyPackage(IN_PATH_PACKAGES)
             .should().dependOnClassesThat().resideInAnyPackage(
                     "java.net.http..",
                     "org.springframework.web.client..",
@@ -92,4 +112,39 @@ class InPathArchitectureTest {
                     "org.apache.hc..")
             .because("External enrichment is Layer 4 and is asynchronous by classification. "
                     + "An outbound call from an in-path layer is the classification being violated.");
+
+    /**
+     * In-path layers reach pre-computed state through the store interfaces, not
+     * through a Redis client directly.
+     *
+     * <p>Without this, an evaluator could hold a {@code RedisTemplate} and issue
+     * whatever command it liked — including a scan or a sort, which are
+     * unbounded. Going through the interface is what keeps the access pattern a
+     * single keyed lookup.
+     */
+    @ArchTest
+    static final ArchRule inPathMustNotHoldARedisClient = noClasses()
+            .that().resideInAnyPackage(IN_PATH_PACKAGES)
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "org.springframework.data.redis..",
+                    "io.lettuce..",
+                    "redis.clients..")
+            .because("Evaluators read state through RiskStateStore, whose contract is a single "
+                    + "keyed lookup. A raw client would let an unbounded command onto the "
+                    + "payment path.");
+
+    /**
+     * In-path layers must not acquire write access to risk state.
+     *
+     * <p>{@code RiskStateWriter} exists as a separate interface precisely so that
+     * "Layer 3 cannot populate what it reads" is a compile-time property. This
+     * rule is what stops someone from injecting the concrete store, which
+     * implements both.
+     */
+    @ArchTest
+    static final ArchRule inPathMustNotWriteRiskState = noClasses()
+            .that().resideInAnyPackage(IN_PATH_PACKAGES)
+            .should().dependOnClassesThat().haveFullyQualifiedName("io.iprf.state.RiskStateWriter")
+            .because("Risk state is populated asynchronously. An in-path writer would mean the "
+                    + "payment path can change the state a later decision reads, on the path.");
 }
