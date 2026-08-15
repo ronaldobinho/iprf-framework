@@ -1,6 +1,7 @@
 package io.iprf.engine;
 
 import io.iprf.domain.ControlLayer;
+import io.iprf.domain.CounterpartyRiskTier;
 import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.Map;
@@ -26,13 +27,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param decision     score boundaries between ALLOW, REVIEW and DECLINE
  * @param identity     Layer 1 rule parameters
  * @param behavioral   Layer 2 rule parameters
+ * @param network      Layer 3 rule parameters
  */
 @ConfigurationProperties(prefix = "iprf.rules")
 public record RuleProperties(
         Map<ControlLayer, Double> layerWeights,
         DecisionThresholds decision,
         IdentityRules identity,
-        BehavioralRules behavioral) {
+        BehavioralRules behavioral,
+        NetworkRules network) {
 
     public RuleProperties {
         // Checked before copying: EnumMap cannot be constructed from an empty
@@ -53,6 +56,7 @@ public record RuleProperties(
         requireSection(decision, "decision");
         requireSection(identity, "identity");
         requireSection(behavioral, "behavioral");
+        requireSection(network, "network");
     }
 
     private static void requireSection(Object section, String name) {
@@ -159,6 +163,46 @@ public record RuleProperties(
                         "behavioral.fallback-absolute-amount must be positive — without it, a payer "
                                 + "with no baseline would face no amount control at all");
             }
+        }
+    }
+
+    /**
+     * Layer 3 parameters.
+     *
+     * @param stateTtlMinutes       counterparty state older than this degrades the layer
+     * @param tierWeights           contribution per pre-computed risk tier
+     * @param fanInWeight           contribution when the receiver shows a fan-in pattern
+     * @param reportedTypologyWeight contribution when a typology has been reported
+     */
+    public record NetworkRules(
+            long stateTtlMinutes,
+            Map<CounterpartyRiskTier, Double> tierWeights,
+            double fanInWeight,
+            double reportedTypologyWeight) {
+
+        public NetworkRules {
+            if (stateTtlMinutes <= 0) {
+                throw new IllegalStateException("network.state-ttl-minutes must be positive");
+            }
+            if (tierWeights == null || tierWeights.isEmpty()) {
+                throw new IllegalStateException("network.tier-weights is required");
+            }
+            tierWeights = new EnumMap<>(tierWeights);
+            tierWeights.forEach((tier, weight) ->
+                    requireUnitInterval(weight == null ? -1 : weight, "network.tier-weights." + tier));
+            Double unknown = tierWeights.get(CounterpartyRiskTier.UNKNOWN);
+            if (unknown != null && unknown > 0.0) {
+                throw new IllegalStateException(
+                        "network.tier-weights.UNKNOWN must be 0 — absence of information is not "
+                                + "evidence of risk, and charging for it would penalise every "
+                                + "counterparty the system has simply never seen");
+            }
+            requireUnitInterval(fanInWeight, "network.fan-in-weight");
+            requireUnitInterval(reportedTypologyWeight, "network.reported-typology-weight");
+        }
+
+        public double weightFor(CounterpartyRiskTier tier) {
+            return tierWeights.getOrDefault(tier, 0.0);
         }
     }
 

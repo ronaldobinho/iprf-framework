@@ -74,3 +74,51 @@ iprf:
       # unusable baseline must never resolve silently to "low risk".
       minimum-baseline-transactions: 10
       fallback-absolute-amount: 2500.00
+
+    # --- Layer 3: Counterparty & Network Signals --------------------------
+    network:
+      # Counterparty state older than this degrades the layer with
+      # NETWORK_STATE_STALE rather than being trusted. Never a blocking refresh.
+      state-ttl-minutes: 1440
+
+      # Contribution per pre-computed tier. UNKNOWN must be zero: absence of
+      # information is not evidence of risk, and charging for it would penalise
+      # every counterparty the system has simply never seen.
+      tier-weights:
+        UNKNOWN: 0.0
+        LOW: 0.0
+        ELEVATED: 0.40
+        HIGH: 0.70
+        CONFIRMED: 1.00
+
+      # Fan-in is the mule-collection signature and the single highest-value
+      # signal against APP fraud, because scam destination accounts are reused
+      # across victims.
+      fan-in-weight: 0.60
+      reported-typology-weight: 0.70
+
+# --- Layer 5: post-settlement detectors ----------------------------------
+#
+# Detector sensitivity is a direct input to the false-positive rate of FUTURE
+# decisions: a detector that fires too readily raises counterparty tiers that
+# Layer 3 then charges against legitimate payments. These are thresholds with a
+# measurable cost, not tuning knobs.
+  post-settlement:
+    window-hours: 24
+
+    # A payroll bureau and a mule account look identical from a fan-in angle, so
+    # the threshold has to be high enough that ordinary many-to-one accounts are
+    # not swept up. The detector ramps the tier rather than assigning a fixed
+    # one, so marginal cases stay ELEVATED rather than HIGH.
+    fan-in-distinct-payers: 5
+
+    fan-out-distinct-receivers: 8
+
+    structuring-min-repeats: 3
+    # The round numbers attackers are assumed to be sitting under.
+    structuring-thresholds:
+      - 10000.00
+      - 5000.00
+      - 3000.00
+    # How far below a threshold still counts as "just below": 5%.
+    structuring-band-percent: 0.05

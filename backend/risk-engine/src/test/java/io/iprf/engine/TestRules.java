@@ -2,6 +2,7 @@ package io.iprf.engine;
 
 import io.iprf.domain.Channel;
 import io.iprf.domain.ControlLayer;
+import io.iprf.domain.CounterpartyRiskTier;
 import io.iprf.state.AccountProfile;
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -38,7 +39,21 @@ public final class TestRules {
                 new RuleProperties.DecisionThresholds(0.35, 0.60),
                 new RuleProperties.IdentityRules(30, 0.30, 0.35, 0.35, 0.80, 24),
                 new RuleProperties.BehavioralRules(
-                        3.0, 0.45, 0.25, 0.20, 5, 0.35, 0.20, 10, new BigDecimal("2500.00")));
+                        3.0, 0.45, 0.25, 0.20, 5, 0.35, 0.20, 10, new BigDecimal("2500.00")),
+                networkRules());
+    }
+
+    public static RuleProperties.NetworkRules networkRules() {
+        return new RuleProperties.NetworkRules(
+                1440,
+                Map.of(
+                        CounterpartyRiskTier.UNKNOWN, 0.0,
+                        CounterpartyRiskTier.LOW, 0.0,
+                        CounterpartyRiskTier.ELEVATED, 0.40,
+                        CounterpartyRiskTier.HIGH, 0.70,
+                        CounterpartyRiskTier.CONFIRMED, 1.00),
+                0.60,
+                0.70);
     }
 
     /**

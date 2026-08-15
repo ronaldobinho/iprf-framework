@@ -78,6 +78,19 @@ public record LayerResult(
         return status == LayerStatus.DEGRADED || status == LayerStatus.TIMED_OUT;
     }
 
+    /**
+     * Whether this layer's contribution should count toward the composite score.
+     *
+     * <p>Only a layer that actually evaluated something contributes. A layer that
+     * failed, timed out, or had no data to work with is excluded from the
+     * denominator rather than counted as a zero — counting silence as zero risk
+     * would let a failed dependency or an unknown counterparty look like a clean
+     * result.
+     */
+    public boolean contributesToScore() {
+        return status == LayerStatus.EVALUATED;
+    }
+
     public double latencyMillis() {
         return latencyMicros / 1000.0;
     }

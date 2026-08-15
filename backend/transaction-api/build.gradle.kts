@@ -8,10 +8,18 @@ plugins {
 // in risk-engine.
 dependencies {
     implementation(project(":risk-engine"))
+    implementation(project(":network-risk"))
+    implementation(project(":post-settlement"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation(libs.springdoc.openapi.webmvc)
+
+    // The architecture guard lives here rather than in risk-engine because this
+    // is the only module whose classpath contains every other one — ArchUnit can
+    // only enforce a rule about classes it can actually see, and a rule scanning
+    // an absent package passes vacuously.
+    testImplementation(libs.archunit.junit5)
 }
 
 // Evaluates a seeded synthetic dataset and prints the decision distribution,

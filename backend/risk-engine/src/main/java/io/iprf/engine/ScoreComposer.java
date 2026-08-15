@@ -8,10 +8,11 @@ import org.springframework.stereotype.Component;
 /**
  * Combines per-layer contributions into the composite risk score.
  *
- * <p>A weighted mean over the layers that actually produced a signal. Degraded
- * layers are excluded from the denominator rather than counted as zero: a layer
- * that could not evaluate has said nothing, and treating silence as "no risk"
- * would make a failed dependency look like a safe transaction.
+ * <p>A weighted mean over the layers that actually evaluated something. Layers
+ * that failed, timed out, or had no data are excluded from the denominator
+ * rather than counted as zero: such a layer has said nothing, and treating
+ * silence as "no risk" would make a failed dependency — or a counterparty the
+ * system has simply never seen — look like a safe transaction.
  *
  * <p>That choice has a consequence worth stating — when Layer 3 degrades, the
  * remaining layers carry proportionally more weight, so the score is computed
@@ -33,7 +34,7 @@ public class ScoreComposer {
 
         for (Map.Entry<ControlLayer, LayerResult> entry : layerResults.entrySet()) {
             LayerResult result = entry.getValue();
-            if (result.isDegraded()) {
+            if (!result.contributesToScore()) {
                 continue;
             }
             double weight = properties.layerWeights().getOrDefault(entry.getKey(), 0.0);

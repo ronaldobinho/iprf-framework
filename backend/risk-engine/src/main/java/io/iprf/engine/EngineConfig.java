@@ -1,5 +1,7 @@
 package io.iprf.engine;
 
+import io.iprf.state.InMemoryRiskStateStore;
+import io.iprf.state.RiskStateStore;
 import java.time.Clock;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -22,5 +24,23 @@ public class EngineConfig {
     @ConditionalOnMissingBean
     public Clock iprfClock() {
         return Clock.systemUTC();
+    }
+
+    /**
+     * The default counterparty risk state store.
+     *
+     * <p>Registered as a conditional {@code @Bean} rather than annotated
+     * {@code @Component}, because {@code @ConditionalOnMissingBean} on a scanned
+     * component depends on scan ordering and would silently win or lose the race
+     * against the Redis-backed store in the {@code risk-state} module.
+     *
+     * <p>Keeping a working in-memory default is deliberate: the framework's core
+     * loop can be demonstrated by cloning the repository and running one command,
+     * with no infrastructure at all.
+     */
+    @Bean
+    @ConditionalOnMissingBean(RiskStateStore.class)
+    public InMemoryRiskStateStore inMemoryRiskStateStore(Clock clock) {
+        return new InMemoryRiskStateStore(clock);
     }
 }
