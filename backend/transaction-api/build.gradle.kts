@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":risk-engine"))
     implementation(project(":network-risk"))
     implementation(project(":post-settlement"))
+    implementation(project(":external-enrichment"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")

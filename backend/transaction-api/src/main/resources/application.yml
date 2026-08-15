@@ -14,6 +14,19 @@ server:
 iprf:
   framework-version: 0.1.0-SNAPSHOT
 
+  # Layer 4 — external enrichment. ASYNC by classification: the evaluate
+  # endpoint never awaits it, and the simulated latency below exists so that
+  # guarantee can be tested rather than asserted.
+  enrichment:
+    enabled: true
+    # Deliberately slow relative to the 50 ms in-path budget. If this ever
+    # affected decision latency, the async separation would be broken and the
+    # test that pins it would fail.
+    simulated-latency-ms: 25
+    simulated-failure-rate: 0.05
+    known-account-rate: 0.30
+    seed: 20260814
+
   # Synthetic scenario run: `./gradlew runScenario`. Never active in a serving
   # deployment — the runner is conditional on `enabled` being true.
   scenario:

@@ -1,8 +1,14 @@
 package io.iprf.engine;
 
+import io.iprf.events.AsyncEventPublisher;
+import io.iprf.events.EventHandler;
+import io.iprf.events.EventPublisher;
+import io.iprf.events.IdempotencyStore;
+import io.iprf.events.InMemoryIdempotencyStore;
 import io.iprf.state.InMemoryRiskStateStore;
 import io.iprf.state.RiskStateStore;
 import java.time.Clock;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,5 +48,29 @@ public class EngineConfig {
     @ConditionalOnMissingBean(RiskStateStore.class)
     public InMemoryRiskStateStore inMemoryRiskStateStore(Clock clock) {
         return new InMemoryRiskStateStore(clock);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(IdempotencyStore.class)
+    public InMemoryIdempotencyStore inMemoryIdempotencyStore() {
+        return new InMemoryIdempotencyStore();
+    }
+
+    /**
+     * The event publisher.
+     *
+     * <p>Handlers are injected as a list rather than registered by each module,
+     * so adding an asynchronous consumer requires only declaring a bean — and,
+     * more importantly, so no module can wire itself into the payment path by
+     * registering a handler that runs inline.
+     */
+    @Bean(destroyMethod = "close")
+    @ConditionalOnMissingBean(EventPublisher.class)
+    public AsyncEventPublisher asyncEventPublisher(
+            ObjectProvider<EventHandler> handlers, IdempotencyStore idempotencyStore) {
+        // ObjectProvider rather than List: a handler may publish events of its
+        // own, which makes the publisher and its handlers mutually dependent at
+        // construction. Resolving lazily breaks the cycle.
+        return new AsyncEventPublisher(() -> handlers.stream().toList(), idempotencyStore);
     }
 }

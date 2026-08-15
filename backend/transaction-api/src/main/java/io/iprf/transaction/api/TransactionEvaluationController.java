@@ -1,6 +1,9 @@
 package io.iprf.transaction.api;
 
 import io.iprf.domain.EvaluationResult;
+import io.iprf.domain.Transaction;
+import io.iprf.events.EventPublisher;
+import io.iprf.events.Events;
 import io.iprf.engine.DecisionPipeline;
 import io.iprf.transaction.web.CorrelationIdFilter;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,9 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransactionEvaluationController {
 
     private final DecisionPipeline pipeline;
+    private final EventPublisher eventPublisher;
 
-    public TransactionEvaluationController(DecisionPipeline pipeline) {
+    public TransactionEvaluationController(DecisionPipeline pipeline, EventPublisher eventPublisher) {
         this.pipeline = pipeline;
+        this.eventPublisher = eventPublisher;
     }
 
     @PostMapping(
@@ -59,8 +65,25 @@ public class TransactionEvaluationController {
             @Valid @RequestBody EvaluateTransactionRequest request,
             HttpServletRequest httpRequest) {
 
+        Transaction transaction = request.toDomain();
         EvaluationResult result = pipeline.evaluate(
-                request.toDomain(), CorrelationIdFilter.current(httpRequest));
+                transaction, CorrelationIdFilter.current(httpRequest));
+
+        // Published after the decision is made and before the response is
+        // serialized, but the publisher hands off to an executor and returns —
+        // nothing downstream of this line can affect the caller's latency. That
+        // property is asserted by a test in which the enrichment registry hangs.
+        eventPublisher.publish(new Events.RiskEvaluationCompleted(
+                UUID.randomUUID().toString(),
+                result.correlationId(),
+                result.evaluatedAt(),
+                result.transactionId(),
+                transaction.payerAccountId(),
+                transaction.payeeAccountId(),
+                result.decision(),
+                result.riskScore(),
+                result.frameworkVersion(),
+                result.totalLatencyMicros()));
 
         return EvaluateTransactionResponse.from(result);
     }
