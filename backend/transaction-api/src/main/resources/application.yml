@@ -14,6 +14,14 @@ server:
 iprf:
   framework-version: 0.1.0-SNAPSHOT
 
+  # Loads synthetic profiles at startup so a locally running API returns
+  # differentiated decisions instead of REVIEW for every unknown payer.
+  # DEMO DATA — must never be enabled in a real deployment.
+  seed:
+    enabled: false
+    profiles: 200
+    seed: 20260814
+
   # Layer 4 — external enrichment. ASYNC by classification: the evaluate
   # endpoint never awaits it, and the simulated latency below exists so that
   # guarantee can be tested rather than asserted.
