@@ -2,28 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * The site is dark by design, not by preference. The scaffold shipped a
+ * prefers-color-scheme light/dark pair; that is removed, because a fraud
+ * decisioning surface rendered light would abandon the design language the
+ * brief fixes and would make the outcome colours read as decoration.
+ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
   }
-}
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  /* The layout sets --font-geist-sans; without this the scaffold silently fell
-     back to Arial and the loaded font was never used. */
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  body {
+    @apply bg-ink text-fg antialiased;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    /* Not a SaaS gradient: a single very low-contrast radial that keeps the
+       hero from reading as a flat black rectangle. Invisible below the fold. */
+    background-image: radial-gradient(
+      ellipse 70rem 40rem at 50% -12rem,
+      rgba(59, 158, 255, 0.07),
+      transparent 70%
+    );
+    background-repeat: no-repeat;
+  }
+
+  /* Keyboard focus must be obvious on a dark surface. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-ink;
+  }
+
+  ::selection {
+    background: theme("colors.accent.dim");
+    color: theme("colors.fg.DEFAULT");
+  }
+
+  /* Tabular figures everywhere numbers are compared column to column. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/*
+ * Honour the OS setting. Every transition on this site is decorative, so the
+ * reduced-motion path simply removes them rather than substituting a fade.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

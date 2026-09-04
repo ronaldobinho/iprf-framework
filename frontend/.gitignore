@@ -34,3 +34,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Generated at build time from docs/framework and application-rules.yml
+/content/
+/src/simulator/generated/
