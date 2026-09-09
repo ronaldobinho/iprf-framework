@@ -86,3 +86,48 @@ Scroll-driven journey (§9A — v1.1), auth, SaaS features, benchmarks, deploy.
 - [ ] Demo block runs the three scenarios client-side
 - [ ] Dashboard fully populated from a seeded synthetic run
 - [ ] SYNTHETIC DATA labeling on every metric surface
+---
+
+## Deviation record — landing rebuild, Sep 9 2026
+
+The landing was rebuilt against a supplied visual reference. These are the
+points where that build departs from what this spec fixes, and why. Recorded
+here because CLAUDE.md requires a documented reason for any deviation from the
+fixed stack and design language.
+
+**Design language.** This spec fixes an electric-blue accent and rules out
+glassmorphism. The landing now uses a neon-green accent over near-black
+charcoal, with translucent card surfaces. Reason: an explicit product decision
+on brand direction. Consequence handled: green was the outcome colour for
+ALLOW, and the rule in `tailwind.config.ts` was that outcome colours appearing
+outside a verdict stop reading as verdicts. The three outcomes now appear only
+together, in a single card, each carrying its own icon. If a lone outcome pill
+ever returns to a data-dense surface, it must be distinguished by more than hue.
+
+**§9A scroll-driven journey, built before the gate.** This spec defers the
+transaction journey to v1.1 and says it may not begin before the Phase 5 gate
+is met. It is now built, and the gate is not met: session 5.3 — dashboard,
+transaction explorer, assessment view, resilience view — is undelivered.
+Reason: the landing is what puts the framework in front of readers. The
+dashboard remains owed and the ordering, not the scope, is what changed.
+
+**Client-side simulator removed.** `frontend/src/simulator/`, its two vitest
+suites, `scripts/generate-rules.mjs` and the Demo block are deleted. Two exit
+checklist items above are therefore abandoned rather than met:
+
+- *Java/TS parity test in CI* — note that this was never actually wired up.
+  The frontend job in `.github/workflows/ci.yml` runs lint and build only; it
+  has no test step, so the parity guarantee this spec asked for was never
+  enforced. Deleting the simulator removes the unenforced TypeScript port, not
+  a working check.
+- *Demo block runs the three scenarios client-side.*
+
+`npm test` now runs `vitest --passWithNoTests`, and there are no frontend tests.
+
+**Rail naming.** Pix is removed from the landing, the navigation, the page
+metadata and the contact template. `docs/framework/latency-model.md` and
+`docs/framework/false-positive-model.md` still derive their figures from the
+Banco Central's *Manual de Tempos do Pix* and still cite it. Rebasing those two
+documents on FedNow and RTP primary sources is scheduled work, not done here.
+Until it is, the landing and the methodology disagree about which rails the
+framework talks about.
