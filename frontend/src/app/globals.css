@@ -18,14 +18,15 @@
   body {
     @apply bg-ink text-fg antialiased;
     font-family: var(--font-geist-sans), system-ui, sans-serif;
-    /* Not a SaaS gradient: a single very low-contrast radial that keeps the
-       hero from reading as a flat black rectangle. Invisible below the fold. */
+    /* A single very low-contrast radial that keeps the hero from reading as a
+       flat black rectangle. Invisible below the fold. */
     background-image: radial-gradient(
-      ellipse 70rem 40rem at 50% -12rem,
-      rgba(59, 158, 255, 0.07),
+      ellipse 70rem 40rem at 50% -14rem,
+      rgba(32, 224, 124, 0.08),
       transparent 70%
     );
     background-repeat: no-repeat;
+    background-attachment: fixed;
   }
 
   /* Keyboard focus must be obvious on a dark surface. */
@@ -51,11 +52,230 @@
   .text-pretty {
     text-wrap: pretty;
   }
+
+  /* The technical grid. Two hairline gradients, no image, no request. Kept
+     under 4% opacity so it reads as texture rather than as a chart. */
+  .tech-grid {
+    background-image:
+      linear-gradient(to right, rgba(147, 169, 162, 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(147, 169, 162, 0.055) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  /* Fades a decorative layer out before it reaches a section edge, so nothing
+     terminates on a hard line. */
+  .mask-fade-y {
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+  }
+
+  .glow-accent {
+    box-shadow:
+      0 0 0 1px rgba(32, 224, 124, 0.25),
+      0 0 24px -6px rgba(32, 224, 124, 0.45);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero globe
+ *
+ * The canvas draws the planet. Everything around it — the orbit, the halo — is
+ * CSS on the compositor, so the only JavaScript running is the one rAF that
+ * owns the projection, and even that stops when the hero leaves the viewport.
+ * ------------------------------------------------------------------------ */
+
+.globe-halo {
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(32, 224, 124, 0.16) 0%,
+    rgba(32, 224, 124, 0.07) 38%,
+    transparent 68%
+  );
+  animation: halo-breathe 9s ease-in-out infinite;
+}
+
+@keyframes halo-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.045);
+  }
 }
 
 /*
- * Honour the OS setting. Every transition on this site is decorative, so the
- * reduced-motion path simply removes them rather than substituting a fade.
+ * The orbit is split in two: an outer element that carries the static 3D tilt,
+ * and an inner one that spins. Putting the tilt inside the keyframes instead
+ * would lose it entirely under reduced motion, where the animation is switched
+ * off and the ellipse would collapse back into a plain circle.
+ *
+ * A rotating ring is also rotationally symmetric, so the spin would be
+ * invisible on its own — the satellite dot is what makes the motion read.
+ */
+.globe-orbit {
+  border: 1px solid rgba(32, 224, 124, 0.22);
+  border-radius: 50%;
+  transform: rotate3d(1, 0.35, 0, 76deg);
+}
+
+.globe-orbit-spin {
+  animation: orbit-spin 34s linear infinite;
+}
+
+.globe-orbit-dot {
+  background: #7bf3b4;
+  box-shadow: 0 0 8px 2px rgba(32, 224, 124, 0.6);
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Transaction journey
+ *
+ * A single rAF writes --journey-progress (0 → 1) and --rail-height (px) onto
+ * the section. Every moving part below derives from those two values through
+ * transform and opacity only, so scrolling costs one style write per frame and
+ * no layout at all. The loop is started and stopped by an IntersectionObserver.
+ *
+ * Reduced motion: the sphere still follows the scroll, because its movement is
+ * 1:1 with the user's own input and introduces no autonomous motion — it
+ * behaves like a scrollbar thumb. What is removed is everything the user did
+ * not ask for: the trail, the pulse, the easing on layer activation.
+ * ------------------------------------------------------------------------ */
+
+.journey {
+  --journey-progress: 0;
+  --rail-height: 0px;
+}
+
+.journey-rail-fill {
+  transform-origin: top center;
+  transform: scaleY(var(--journey-progress));
+  will-change: transform;
+}
+
+.journey-sphere {
+  transform: translate3d(-50%, calc(var(--journey-progress) * var(--rail-height)), 0);
+  will-change: transform;
+}
+
+.journey-sphere-core {
+  background: radial-gradient(circle at 38% 34%, #d9ffe9 0%, #46f09b 34%, #12a75a 72%, #0a6d3a 100%);
+  box-shadow:
+    0 0 12px 2px rgba(32, 224, 124, 0.75),
+    0 0 34px 10px rgba(32, 224, 124, 0.35),
+    0 0 72px 26px rgba(32, 224, 124, 0.14);
+  animation: sphere-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes sphere-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px 2px rgba(32, 224, 124, 0.75),
+      0 0 34px 10px rgba(32, 224, 124, 0.35),
+      0 0 72px 26px rgba(32, 224, 124, 0.14);
+  }
+  50% {
+    box-shadow:
+      0 0 14px 3px rgba(32, 224, 124, 0.9),
+      0 0 42px 14px rgba(32, 224, 124, 0.42),
+      0 0 88px 32px rgba(32, 224, 124, 0.18);
+  }
+}
+
+/* The trail is a short gradient hanging above the sphere. It is drawn inside
+   the sphere's own transformed wrapper, so it costs nothing extra to move. */
+.journey-sphere-trail {
+  background: linear-gradient(to top, rgba(32, 224, 124, 0.55), transparent);
+}
+
+.journey-sphere-orbit {
+  animation: sphere-orbit 5.5s linear infinite;
+}
+
+@keyframes sphere-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Layer platforms. `data-state` is written by the same rAF, but only when the
+   active index actually changes — not every frame. */
+/*
+ * Only the platform dims while a layer is pending. Fading the copy as well
+ * would drop body text below the contrast floor for however long the reader
+ * spends there, and a layer they have not scrolled to yet is still a layer
+ * they are allowed to read.
+ */
+.layer-node {
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.layer-visual {
+  transition:
+    opacity 520ms ease,
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.layer-node[data-state="pending"] .layer-visual {
+  opacity: 0.5;
+}
+
+.layer-node[data-state="done"] .layer-visual {
+  opacity: 0.8;
+}
+
+.layer-node[data-state="active"] .layer-visual {
+  opacity: 1;
+  transform: translateY(-6px);
+}
+
+.layer-plate {
+  transition:
+    box-shadow 520ms ease,
+    border-color 520ms ease,
+    background-color 520ms ease;
+}
+
+.layer-node[data-state="active"] .layer-plate-lit {
+  box-shadow:
+    0 0 0 1px rgba(32, 224, 124, 0.4),
+    0 0 34px -4px rgba(32, 224, 124, 0.5),
+    0 14px 44px -18px rgba(32, 224, 124, 0.6);
+}
+
+.layer-marker {
+  transition:
+    background-color 380ms ease,
+    box-shadow 380ms ease,
+    transform 380ms ease;
+}
+
+.layer-node[data-state="active"] .layer-marker,
+.layer-node[data-state="done"] .layer-marker {
+  background-color: theme("colors.accent.DEFAULT");
+  box-shadow: 0 0 0 4px rgba(32, 224, 124, 0.16);
+  transform: scale(1.15);
+}
+
+/*
+ * Honour the OS setting. Autonomous motion — the globe, the halo, the orbits,
+ * the pulse — is removed outright. Scroll-linked position is kept, but stripped
+ * of easing so nothing continues moving after the user stops.
  */
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -67,5 +287,16 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .globe-halo,
+  .globe-orbit-spin,
+  .journey-sphere-orbit {
+    animation: none !important;
+  }
+  .journey-sphere-trail {
+    display: none;
+  }
+  .layer-node[data-state="pending"] .layer-visual {
+    opacity: 0.7;
   }
 }

@@ -1,99 +1,141 @@
-import type { ReactNode } from "react";
-import type { Decision } from "@/simulator/types";
+import Link from "next/link";
+import type { AnchorHTMLAttributes, ReactNode } from "react";
+import type { LayerPath, MetricBadge } from "@/components/landing/content";
+
+/** The three outcomes the decision engine can return. */
+export type Decision = "ALLOW" | "REVIEW" | "DECLINE";
 
 export function Section({
   id,
-  eyebrow,
-  title,
-  lede,
+  className = "",
   children,
-  bordered = true,
+  bordered = false,
 }: {
   id?: string;
-  eyebrow?: string;
-  title?: string;
-  lede?: ReactNode;
+  className?: string;
   children: ReactNode;
   bordered?: boolean;
 }) {
   return (
     <section
       id={id}
-      className={`px-6 py-20 sm:py-24 ${bordered ? "border-t border-edge" : ""}`}
+      className={`relative scroll-mt-20 px-6 py-20 sm:py-28 ${bordered ? "border-t border-edge" : ""} ${className}`}
     >
-      <div className="mx-auto w-full max-w-content">
-        {eyebrow ? (
-          <p className="mb-3 font-mono text-2xs uppercase tracking-[0.18em] text-accent">
-            {eyebrow}
-          </p>
-        ) : null}
-        {title ? (
-          <h2 className="max-w-prose text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
-            {title}
-          </h2>
-        ) : null}
-        {lede ? (
-          <div className="mt-4 max-w-prose text-pretty text-base leading-relaxed text-fg-muted">
-            {lede}
-          </div>
-        ) : null}
-        <div className={title || lede ? "mt-10" : ""}>{children}</div>
-      </div>
+      <div className="mx-auto w-full max-w-content">{children}</div>
     </section>
   );
 }
 
+export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <p
+      className={`font-mono text-2xs uppercase tracking-[0.22em] text-fg-muted ${className}`}
+    >
+      {children}
+    </p>
+  );
+}
+
+type ButtonProps = {
+  href: string;
+  children: ReactNode;
+  variant?: "primary" | "secondary";
+  external?: boolean;
+  className?: string;
+} & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children" | "className">;
+
 /**
- * Every surface showing a figure carries this. The project's honesty rules
- * require it, and on a page whose purpose is credibility it is an asset rather
- * than a disclaimer: it says the numbers are what they are.
+ * One button component with two skins. The primary is the only solid green
+ * surface on the page — that scarcity is what makes it read as the action.
  */
-export function SyntheticBadge({ className = "" }: { className?: string }) {
+export function Button({
+  href,
+  children,
+  variant = "primary",
+  external = false,
+  className = "",
+  ...rest
+}: ButtonProps) {
+  const base =
+    "inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold tracking-tight transition-colors";
+  const skin =
+    variant === "primary"
+      ? "bg-accent text-ink hover:bg-accent-strong"
+      : "border border-edge-strong bg-ink-raised/70 text-fg hover:border-accent-dim hover:bg-ink-high";
+
+  const classes = `${base} ${skin} ${className}`;
+
+  if (external) {
+    return (
+      <a href={href} rel="noreferrer noopener" className={classes} {...rest}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={classes} {...rest}>
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * Provenance badges.
+ *
+ * These exist because the project's honesty rules require every figure to say
+ * what kind of claim it is. TARGET is a design budget, not a measurement. FACT
+ * is a property of the source that a reader can check by cloning it. Nothing
+ * may claim a measurement until backend/benchmarks produces one.
+ */
+const BADGE_STYLE: Record<MetricBadge, string> = {
+  TARGET: "border-edge-strong bg-ink-high text-fg-muted",
+  FACT: "border-edge-strong bg-ink-high text-fg-muted",
+  "OPEN CORE": "border-accent-dim/60 bg-accent-wash text-accent",
+};
+
+export function ProvenanceBadge({ badge }: { badge: MetricBadge }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded border border-edge-strong bg-ink-high px-2 py-1 font-mono text-2xs uppercase tracking-[0.12em] text-fg-muted ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-2xs uppercase tracking-[0.12em] ${BADGE_STYLE[badge]}`}
     >
-      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-fg-dim" />
-      Synthetic data
+      <span
+        aria-hidden
+        className={`h-1.5 w-1.5 rounded-full ${badge === "OPEN CORE" ? "bg-accent" : "bg-fg-dim"}`}
+      />
+      {badge}
     </span>
   );
 }
 
-const DECISION_STYLE: Record<Decision, string> = {
-  ALLOW: "border-allow/40 bg-allow-wash text-allow",
-  REVIEW: "border-review/40 bg-review-wash text-review",
-  DECLINE: "border-decline/40 bg-decline-wash text-decline",
-};
+export function DemoDataNote({ className = "" }: { className?: string }) {
+  return (
+    <p className={`font-mono text-2xs uppercase tracking-[0.14em] text-fg-dim ${className}`}>
+      Synthetic / demo data — illustrative payload, not a recorded transaction
+    </p>
+  );
+}
 
-export function DecisionPill({ decision, large = false }: { decision: Decision; large?: boolean }) {
+export function PathBadge({ path }: { path: LayerPath }) {
+  const inPath = path === "IN_PATH";
   return (
     <span
-      className={`inline-flex items-center rounded border font-mono font-semibold uppercase tracking-[0.12em] ${
-        DECISION_STYLE[decision]
-      } ${large ? "px-3 py-1.5 text-sm" : "px-2 py-1 text-2xs"}`}
+      className={`inline-flex items-center rounded px-2 py-1 font-mono text-2xs font-medium uppercase tracking-[0.12em] ${
+        inPath
+          ? "bg-accent-wash text-accent ring-1 ring-inset ring-accent-dim/50"
+          : "bg-ink-high text-fg-dim ring-1 ring-inset ring-edge-strong"
+      }`}
     >
-      {decision}
+      {inPath ? "in-path" : "async"}
     </span>
   );
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-lg border border-edge bg-ink-raised p-6 ${className}`}>
+    <div
+      className={`rounded-xl border border-edge bg-ink-raised/70 p-6 backdrop-blur-sm ${className}`}
+    >
       {children}
     </div>
-  );
-}
-
-export function InPathTag({ path }: { path: "IN_PATH" | "ASYNC" }) {
-  const inPath = path === "IN_PATH";
-  return (
-    <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 font-mono text-2xs uppercase tracking-[0.1em] ${
-        inPath ? "bg-accent-wash text-accent" : "bg-ink-high text-fg-dim"
-      }`}
-    >
-      {inPath ? "in-path" : "async"}
-    </span>
   );
 }

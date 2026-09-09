@@ -3,16 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/sync-docs.mjs && node scripts/generate-rules.mjs",
+    "predev": "node scripts/sync-docs.mjs && node scripts/generate-globe.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/sync-docs.mjs && node scripts/generate-rules.mjs",
+    "prebuild": "node scripts/sync-docs.mjs && node scripts/generate-globe.mjs",
     "build": "next build",
     "start": "next start",
+    "prelint": "node scripts/sync-docs.mjs && node scripts/generate-globe.mjs",
     "lint": "next lint",
-    "pretest": "node scripts/generate-rules.mjs",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "prelint": "node scripts/sync-docs.mjs && node scripts/generate-rules.mjs"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "mermaid": "^11.17.2",
@@ -24,13 +24,11 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
-    "js-yaml": "^4.3.2",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
