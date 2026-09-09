@@ -1,19 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
 
-  "//": [
-    "Root Directory stays at the repository root. The frontend build reads",
-    "docs/framework through scripts/sync-docs.mjs, which lives above frontend/;",
-    "with the root set to frontend/ the prebuild step cannot see it and the",
-    "deploy fails. Keeping the commands here rather than in the dashboard means",
-    "the reason this works is reviewable in a diff.",
-    "",
-    "framework is null on purpose. next.config.mjs sets output: 'export', so",
-    "the build emits a plain static site and there is no server runtime for the",
-    "Next.js builder to manage. Declaring nextjs here while pointing",
-    "outputDirectory at out/ asks Vercel for two contradictory things."
-  ],
-
   "framework": null,
   "installCommand": "cd frontend && npm ci",
   "buildCommand": "cd frontend && npm run build",
