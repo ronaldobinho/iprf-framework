@@ -84,3 +84,44 @@ no silent gaps.
 - [ ] v1.0.0 tagged and released
 - [ ] Vercel live; VPS demo API live, isolated and rate-limited
 - [ ] Evidence freeze inputs ready for Sep 28–Oct 5 window
+---
+
+## Deviation record — README, community files and Vercel deploy, Sep 9 2026
+
+Work from this phase was pulled forward, before the Phase 5 gate closed and
+before the sessions below ran in order. Recorded here for the same reason as
+the record in `phase-5.md`: an out-of-order build with no written reason looks
+arbitrary in hindsight.
+
+**Session 6.3 (README) — done early.** The README now carries the §19 structure
+in full. Reason: the repository is the destination the site sends technical
+readers to, and it was still a stub announcing "Phase 1 of 6" long after phases
+1 through 5 had shipped. A stale front page costs more than an out-of-order one.
+
+**Session 6.2 (community files) — partially done early.** `SECURITY.md`,
+`CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` are written. The rest of 6.2 remains
+outstanding: the dead-code and duplicated-code sweep, dependency vulnerability
+scanning and secret scanning as blocking CI steps, licence headers, NOTICE.
+
+**Session 6.4 (deploy) — frontend only, and only prepared.** `vercel.json` at
+the repository root defines install, build and output so the frontend builds
+with the repository root as the Vercel root directory. That is not cosmetic:
+`frontend/scripts/sync-docs.mjs` reads `docs/framework`, which lives above
+`frontend/`, and `frontend/content/` is gitignored — with the root directory
+set to `frontend/`, the prebuild step cannot see the documents and the deploy
+fails. `framework` is null because `next.config.mjs` sets `output: 'export'`;
+declaring the Next.js preset while pointing `outputDirectory` at `out/` asks
+Vercel for two contradictory things.
+
+The demo API on the VPS is untouched and still owed.
+
+**Not done, still owed from this phase.** Benchmarks (6.1) — the suite has not
+been run and no figure anywhere claims a measurement. The remainder of the 6.2
+quality sweep. The v1.0.0 tag. The 20 acceptance criteria from §26.
+
+**Also owed, carried from `phase-5.md`.** The dashboard and transaction
+explorer (session 5.3), and rebasing `latency-model.md` and
+`false-positive-model.md` off the Banco Central sources onto FedNow and RTP
+primary sources. Note that `backend/risk-engine/.../Rail.java` still declares a
+`PIX` constant; removing rail names from the domain model was not in scope for
+the landing work and would be a backend change.
