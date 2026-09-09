@@ -17,7 +17,7 @@ export const SITE = {
    * must be the address the site actually answers on — a value pointing at an
    * unregistered domain silently poisons all three.
    */
-  url: "https://iprf-framework.vercel.app",
+  url: "https://iprf-payments.vercel.app",
 
   githubUrl: "https://github.com/ronaldobinho/iprf-framework",
   issuesUrl: "https://github.com/ronaldobinho/iprf-framework/issues",

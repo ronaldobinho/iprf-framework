@@ -8,9 +8,9 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F.svg)](https://spring.io/projects/spring-boot)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black.svg)](https://nextjs.org/)
 
-[**Live site**](https://iprf-framework.vercel.app) · [**Methodology**](https://iprf-framework.vercel.app/methodology) · [**Documentation source**](docs/framework)
+[**Live site**](https://iprf-payments.vercel.app) · [**Methodology**](https://iprf-payments.vercel.app/methodology) · [**Documentation source**](docs/framework)
 
-[![The IPRF landing page](docs/assets/landing-hero.png)](https://iprf-framework.vercel.app)
+[![The IPRF landing page](docs/assets/landing-hero.png)](https://iprf-payments.vercel.app)
 
 ---
 
@@ -232,7 +232,7 @@ The [`benchmarks`](backend/benchmarks) module is where JMH microbenchmarks and a
 
 ## 16. Live demo
 
-The [landing site](https://iprf-framework.vercel.app) is a static export with no backend dependency: it explains the framework, walks a transaction through all five layers, and renders the methodology documents directly from [`docs/framework`](docs/framework) — the same files, not a summary rewritten for a website.
+The [landing site](https://iprf-payments.vercel.app) is a static export with no backend dependency: it explains the framework, walks a transaction through all five layers, and renders the methodology documents directly from [`docs/framework`](docs/framework) — the same files, not a summary rewritten for a website.
 
 A publicly hosted demo API is on the roadmap. It does not exist yet; the API examples above are for a local run.
 
