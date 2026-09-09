@@ -5,11 +5,10 @@ import { SITE } from "@/lib/site";
 /**
  * Footer.
  *
- * The reference layout carries a longer link list — Use Cases, Roadmap, About,
- * Contribute, Privacy, Terms, Code of Conduct. Those pages do not exist yet, and
- * a dead link on a page whose entire argument is verifiability costs more than
- * an empty column slot. They go in when their destinations do; CONTRIBUTING.md
- * and CODE_OF_CONDUCT.md are already scheduled for phase 6, session 6.2.
+ * Every link here resolves. The reference layout also carried Use Cases,
+ * Roadmap, About, Privacy and Terms; those pages do not exist, and a dead link
+ * on a page whose whole argument is verifiability costs more than an empty
+ * column slot. They go in when their destinations do.
  */
 
 const COLUMNS = [
@@ -36,8 +35,24 @@ const COLUMNS = [
     ],
   },
   {
+    title: "Community",
+    links: [
+      { href: `${SITE.githubUrl}/blob/main/CONTRIBUTING.md`, label: "Contribute", external: true },
+      { href: SITE.issuesUrl, label: "Issues", external: true },
+      {
+        href: `${SITE.githubUrl}/blob/main/CODE_OF_CONDUCT.md`,
+        label: "Code of Conduct",
+        external: true,
+      },
+      { href: `${SITE.githubUrl}/blob/main/SECURITY.md`, label: "Security", external: true },
+    ],
+  },
+  {
     title: "Contact",
-    links: [{ href: `mailto:${SITE.contactEmail}`, label: "Get in Touch", external: true }],
+    links: [
+      { href: `mailto:${SITE.contactEmail}`, label: "Email", external: true },
+      { href: SITE.linkedInUrl, label: "LinkedIn", external: true },
+    ],
   },
 ] as const;
 
@@ -45,7 +60,7 @@ export function Footer() {
   return (
     <footer className="border-t border-edge px-6 py-14">
       <div className="mx-auto w-full max-w-content">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.3fr)_repeat(4,minmax(0,1fr))]">
           <div className="max-w-sm">
             <Link
               href="/"

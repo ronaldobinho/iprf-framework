@@ -12,11 +12,17 @@ export const SITE = {
   description:
     "An open-source assessment framework and reference implementation for fraud prevention and resilience in irrevocable instant-payment systems.",
 
-  /** Set once a domain is registered; used for canonical URLs and the sitemap. */
-  url: "https://iprf.dev",
+  /**
+   * Canonical origin. Used for the sitemap, robots, and Open Graph URLs, so it
+   * must be the address the site actually answers on — a value pointing at an
+   * unregistered domain silently poisons all three.
+   */
+  url: "https://iprf-framework.vercel.app",
 
   githubUrl: "https://github.com/ronaldobinho/iprf-framework",
+  issuesUrl: "https://github.com/ronaldobinho/iprf-framework/issues",
   contactEmail: "ronaldobinho@gmail.com",
+  linkedInUrl: "https://www.linkedin.com/in/ronaldocarvalho/",
 
   license: "Apache-2.0",
   licenseUrl: "https://www.apache.org/licenses/LICENSE-2.0",

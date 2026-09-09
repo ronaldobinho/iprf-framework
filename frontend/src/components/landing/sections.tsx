@@ -185,8 +185,10 @@ export function Integration() {
             status="200 OK"
             body={`{
   "decision": "ALLOW",
-  "riskScore": 12,
-  "latencyMs": 8
+  "riskScore": 0.12,
+  "latencyMs": 0.41,
+  "riskFactors": [],
+  "frameworkVersion": "0.1.0-SNAPSHOT"
 }`}
           />
         </div>

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+
+  "//": [
+    "Root Directory stays at the repository root. The frontend build reads",
+    "docs/framework through scripts/sync-docs.mjs, which lives above frontend/;",
+    "with the root set to frontend/ the prebuild step cannot see it and the",
+    "deploy fails. Keeping the commands here rather than in the dashboard means",
+    "the reason this works is reviewable in a diff.",
+    "",
+    "framework is null on purpose. next.config.mjs sets output: 'export', so",
+    "the build emits a plain static site and there is no server runtime for the",
+    "Next.js builder to manage. Declaring nextjs here while pointing",
+    "outputDirectory at out/ asks Vercel for two contradictory things."
+  ],
+
+  "framework": null,
+  "installCommand": "cd frontend && npm ci",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/out",
+
+  "trailingSlash": true,
+
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://vitals.vercel-insights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/(.*)\\.(png|jpg|jpeg|svg|ico|woff|woff2)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}
