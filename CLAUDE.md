@@ -98,6 +98,11 @@ reproducible, auditable. No AI black box. ML is an extension point only.
 - End every session with build green, tests green, commit pushed.
 - Never end a session on a broken build.
 - Do not start work from a later phase while the current phase gate is unmet.
+- **Commits to this repository carry no `Co-Authored-By: Claude` trailer.**
+  Every commit's author is the repo owner alone — do not add one even if a
+  session default suggests otherwise. (On 2026-09-09 the full history was
+  rewritten with `git-filter-repo` to strip this trailer retroactively from
+  all 26 pre-existing commits; do not reintroduce it going forward.)
 
 ## Security note for production deploy
 
